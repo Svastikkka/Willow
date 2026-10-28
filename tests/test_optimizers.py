@@ -61,6 +61,60 @@ class OptimizerTest(TestCase):
             "Error optimizing file.png with the 'dummy' library", log_output.output[0]
         )
 
+    @mock.patch("willow.optimizers.base.subprocess.check_output")
+    def test_process_logs_error_details_without_traceback(self, mock_check_output):
+        mock_check_output.side_effect = CalledProcessError(
+            1, "dummy", output=b"dummy: cannot read file\n"
+        )
+        with self.assertLogs("willow", level="ERROR") as log_output:
+            self.DummyOptimizer.process("file.png")
+
+        record = log_output.records[0]
+        self.assertIsNone(record.exc_info)
+        self.assertIn("exit status 1", record.getMessage())
+        self.assertIn("dummy: cannot read file", record.getMessage())
+
+    @mock.patch("willow.optimizers.base.subprocess.check_output")
+    def test_process_logs_empty_output(self, mock_check_output):
+        mock_check_output.side_effect = CalledProcessError(1, "dummy", output=b"")
+        with self.assertLogs("willow", level="ERROR") as log_output:
+            self.DummyOptimizer.process("file.png")
+
+        self.assertIn("no output", log_output.records[0].getMessage())
+
+    @mock.patch("willow.optimizers.base.subprocess.check_output")
+    def test_process_logs_os_error(self, mock_check_output):
+        mock_check_output.side_effect = FileNotFoundError(
+            2, "No such file or directory"
+        )
+        with self.assertLogs("willow", level="ERROR") as log_output:
+            self.DummyOptimizer.process("file.png")
+
+        self.assertIn(
+            "Error optimizing file.png with the 'dummy' library", log_output.output[0]
+        )
+
+    @mock.patch("willow.optimizers.base.subprocess.check_output")
+    def test_process_skips_ignored_return_code(self, mock_check_output):
+        class SkippingOptimizer(self.DummyOptimizer):
+            ignored_return_codes = frozenset({98})
+
+        mock_check_output.side_effect = CalledProcessError(98, "dummy", output=b"")
+        with self.assertLogs("willow", level="DEBUG") as log_output:
+            SkippingOptimizer.process("file.png")
+
+        self.assertEqual([r.levelname for r in log_output.records], ["DEBUG"])
+        self.assertIn("exit status 98", log_output.records[0].getMessage())
+
+    @mock.patch("willow.optimizers.base.subprocess.check_output")
+    def test_pngquant_skip_if_larger_is_not_an_error(self, mock_check_output):
+        # pngquant exits with 98 when --skip-if-larger leaves the file untouched
+        mock_check_output.side_effect = CalledProcessError(98, "pngquant", output=b"")
+        with self.assertLogs("willow", level="DEBUG") as log_output:
+            Pngquant.process("file.png")
+
+        self.assertEqual([r.levelname for r in log_output.records], ["DEBUG"])
+
 
 class DefaultOptimizerTestBase:
     @classmethod

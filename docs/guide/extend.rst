@@ -197,3 +197,14 @@ and return false if the library is not found or calling the library returns a no
 
 To ensure the registry can check your library, you can override the :meth:`OptimizerBase.get_check_library_arguments()`
 method to use different arguments that will return a zero exit code.
+
+If the library exits with a non-zero code, the error is logged and the file is left as is. Some libraries use a
+non-zero exit code to report that they chose not to change the file, for example ``pngquant --skip-if-larger``
+exits with ``98``. List such codes in ``ignored_return_codes`` and they will only be logged at debug level:
+
+.. code-block:: python
+
+    class SvgoOptimizer(OptimizerBase):
+        library_name = "svgo"
+        image_format = "svg"
+        ignored_return_codes = frozenset({98})

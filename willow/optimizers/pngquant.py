@@ -10,8 +10,6 @@ class Pngquant(OptimizerBase):
 
     library_name: ClassVar[str] = "pngquant"
     image_format: ClassVar[str] = "png"
-    # 98: --skip-if-larger left the file as is because the result would be larger
-    ignored_return_codes: ClassVar[frozenset[int]] = frozenset({98})
 
     @classmethod
     def get_command_arguments(

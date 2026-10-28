@@ -7,7 +7,7 @@ Changelog
 - Add support for Python 3.15 (Storm Heg)
 - Drop support for Python 3.10 (Storm Heg)
 - Minimum required Pillow version is now 13.0 (Storm Heg)
-- Log optimizer failures as a single error line with the exit status instead of a traceback, catch ``OSError`` from optimizer libraries, and treat ``pngquant`` exit status 98 (``--skip-if-larger``) as a skip (svastikkka)
+- Improve optimizer error handling by logging failures without a traceback (Manshu Sharma)
 
 1.12.0 (2025-10-26)
 -------------------
